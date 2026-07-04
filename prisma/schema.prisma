@@ -1,0 +1,232 @@
+// ─── prisma/schema.prisma ───
+// ORM Prisma — toutes les tables de Grenier Solidaire
+// Après modification : npx prisma migrate dev --name nom_migration
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── CATÉGORIES ───
+model Category {
+  id         String    @id // ex: "huile", "riz"
+  label      String
+  sortOrder  Int       @default(0) @map("sort_order")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  products   Product[]
+
+  @@map("categories")
+}
+
+// ─── PRODUITS ───
+model Product {
+  id             String      @id @default(uuid())
+  name           String
+  unit           String
+  category       Category    @relation(fields: [categoryId], references: [id])
+  categoryId     String      @map("category_id")
+  bgColor        String      @default("#E8F5E9") @map("bg_color")
+  emoji          String      @default("📦")
+  imageUrl       String?     @map("image_url")
+  detailQty      String      @map("detail_qty")
+  detailPrice    Int         @map("detail_price")
+  grosQty        String      @map("gros_qty")
+  grosPrice      Int         @map("gros_price")
+  grosThreshold  Int         @map("gros_threshold")
+  active         Boolean     @default(true)
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  orderItems     OrderItem[]
+
+  @@map("products")
+}
+
+// ─── CYCLES DE COMMANDE ───
+model Cycle {
+  id          String      @id @default(uuid())
+  label       String
+  opensAt     DateTime    @map("opens_at")
+  closesAt    DateTime    @map("closes_at")
+  deliveryAt  DateTime    @map("delivery_at")
+  status      CycleStatus @default(OPEN)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  orders      Order[]
+
+  @@map("cycles")
+}
+
+enum CycleStatus {
+  OPEN
+  CLOSED
+}
+
+// ─── POINTS DE COLLECTE ───
+model CollectionPoint {
+  id        String    @id @default(uuid())
+  name      String
+  address   String
+  zone      String
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at")
+  deliveries Delivery[]
+
+  @@map("collection_points")
+}
+
+// ─── CLIENTS ───
+model Client {
+  id          String    @id @default(uuid())
+  name        String
+  phone       String    @unique
+  quartier    String?
+  ordersCount Int       @default(0) @map("orders_count")
+  totalSpent  Int       @default(0) @map("total_spent")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  orders      Order[]
+
+  @@map("clients")
+}
+
+// ─── COMMANDES ───
+model Order {
+  id              String        @id @default(uuid())
+  orderNumber     String        @unique @map("order_number")
+  client          Client        @relation(fields: [clientId], references: [id])
+  clientId        String        @map("client_id")
+  cycle           Cycle         @relation(fields: [cycleId], references: [id])
+  cycleId         String        @map("cycle_id")
+  total           Int
+  status          OrderStatus   @default(PENDING)
+  waveSessionId   String?       @map("wave_session_id")
+  waveLaunchUrl   String?       @map("wave_launch_url")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  items           OrderItem[]
+  transaction     Transaction?
+  delivery        Delivery?
+
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING    // En attente de paiement
+  PAID       // Paiement confirmé par Wave
+  READY      // Prête à être collectée/livrée
+  DELIVERED  // Livrée
+  CANCELLED  // Annulée
+  FAILED     // Paiement échoué
+}
+
+// ─── LIGNES DE COMMANDE ───
+model OrderItem {
+  id        String   @id @default(uuid())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId   String   @map("order_id")
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String   @map("product_id")
+  qty       Int
+  price     Int      // Prix unitaire au moment de la commande
+  tier      String   // "detail" ou "gros"
+  subtotal  Int      // qty * price
+
+  @@map("order_items")
+}
+
+// ─── TRANSACTIONS WAVE ───
+model Transaction {
+  id            String            @id @default(uuid())
+  order         Order             @relation(fields: [orderId], references: [id])
+  orderId       String            @unique @map("order_id")
+  waveRef       String?           @map("wave_ref")
+  waveSessionId String?           @map("wave_session_id")
+  amount        Int
+  currency      String            @default("XOF")
+  status        TransactionStatus @default(PENDING)
+  hmacVerified  Boolean           @default(false) @map("hmac_verified")
+  rawPayload    Json?             @map("raw_payload")
+  createdAt     DateTime          @default(now()) @map("created_at")
+  updatedAt     DateTime          @updatedAt @map("updated_at")
+
+  @@map("transactions")
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// ─── LIVRAISONS ───
+model Delivery {
+  id                String          @id @default(uuid())
+  order             Order           @relation(fields: [orderId], references: [id])
+  orderId           String          @unique @map("order_id")
+  mode              DeliveryMode
+  collectionPoint   CollectionPoint? @relation(fields: [collectionPointId], references: [id])
+  collectionPointId String?         @map("collection_point_id")
+  address           String?         // Pour livraison domicile
+  zone              String?
+  deliveryFee       Int             @default(0) @map("delivery_fee")
+  status            DeliveryStatus  @default(PENDING)
+  scheduledAt       DateTime?       @map("scheduled_at")
+  deliveredAt       DateTime?       @map("delivered_at")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  @@map("deliveries")
+}
+
+enum DeliveryMode {
+  COLLECTE   // Point de collecte
+  DOMICILE   // Livraison à domicile
+}
+
+enum DeliveryStatus {
+  PENDING
+  SCHEDULED
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+}
+
+// ─── ADMIN USERS ───
+model AdminUser {
+  id           String     @id @default(uuid())
+  email        String     @unique
+  passwordHash String     @map("password_hash")
+  name         String
+  role         AdminRole  @default(OPERATEUR)
+  active       Boolean    @default(true)
+  lastLoginAt  DateTime?  @map("last_login_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  auditLogs    AuditLog[]
+
+  @@map("admin_users")
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  OPERATEUR
+}
+
+// ─── JOURNAL D'ACTIVITÉ ───
+model AuditLog {
+  id        String     @id @default(uuid())
+  admin     AdminUser? @relation(fields: [adminId], references: [id])
+  adminId   String?    @map("admin_id")
+  action    String     // ex: "CREATE_PRODUCT", "UPDATE_ORDER_STATUS"
+  target    String?    // ex: "product:uuid" ou "order:GS-0001"
+  detail    Json?      // Données avant/après modification
+  ip        String?
+  userAgent String?    @map("user_agent")
+  createdAt DateTime   @default(now()) @map("created_at")
+
+  @@map("audit_logs")
+}

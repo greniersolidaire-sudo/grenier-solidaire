@@ -1,0 +1,39 @@
+# ═══════════════════════════════════════════════════════════
+# GRENIER SOLIDAIRE — Variables d'environnement
+# ═══════════════════════════════════════════════════════════
+# 1. Copie ce fichier en .env.local
+# 2. Remplis toutes les valeurs
+# 3. Ne jamais committer .env.local sur GitHub
+# ═══════════════════════════════════════════════════════════
+
+# ─── BASE DE DONNÉES (Supabase + Prisma) ───
+# Settings > Database > Connection string > URI (mode Transaction)
+DATABASE_URL="postgresql://postgres:[MOT_DE_PASSE]@db.[PROJECT_ID].supabase.co:6543/postgres?pgbouncer=true"
+# Settings > Database > Connection string > URI (mode Session)
+DIRECT_URL="postgresql://postgres:[MOT_DE_PASSE]@db.[PROJECT_ID].supabase.co:5432/postgres"
+
+# ─── SUPABASE (pour le Storage images) ───
+NEXT_PUBLIC_SUPABASE_URL="https://[PROJECT_ID].supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+# ─── NEXTAUTH ───
+# Génère avec : openssl rand -base64 32
+NEXTAUTH_SECRET="change-this-to-a-random-secret-string"
+NEXTAUTH_URL="http://localhost:3000"
+# En production : NEXTAUTH_URL="https://greniersolidaire.ci"
+
+# ─── WAVE CI ───
+# Portail Wave Business > Développeurs > Clés API
+WAVE_API_KEY="wave_sn_prod_..."
+# Portail Wave Business > Développeurs > Webhooks > Secret
+WAVE_WEBHOOK_SECRET="whsec_..."
+WAVE_API_URL="https://api.wave.com/v1"
+
+# ─── APP ───
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+# En production : NEXT_PUBLIC_APP_URL="https://greniersolidaire.ci"
+
+# ─── UPLOAD IMAGES ───
+# Bucket Supabase Storage pour les images produits
+SUPABASE_STORAGE_BUCKET="product-images"

@@ -214,6 +214,7 @@ model AdminUser {
 enum AdminRole {
   SUPER_ADMIN
   OPERATEUR
+  GESTIONNAIRE
 }
 
 // ─── JOURNAL D'ACTIVITÉ ───

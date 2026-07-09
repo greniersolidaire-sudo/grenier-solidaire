@@ -35,6 +35,8 @@ export const authOptions: NextAuthOptions = {
           data: { lastLoginAt: new Date() },
         });
 
+        console.log('Admin trouvé:', admin.email, 'Role:', admin.role);
+
         return {
           id: admin.id,
           email: admin.email,

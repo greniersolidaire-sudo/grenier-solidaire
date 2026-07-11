@@ -32,12 +32,17 @@ export const ROLE_PERMISSIONS: Record<AdminRole, string[]> = {
   ],
 };
 
+// export function hasAccess(role: AdminRole, path: string): boolean {
+//   const permissions = ROLE_PERMISSIONS[role] || [];
+//   // console.log('====================================');
+//   // console.log("permissions : ", permissions);
+//   // console.log('====================================');
+//   return permissions.some(p => path === p || path.startsWith(p + '/'));
+// }
+
 export function hasAccess(role: AdminRole, path: string): boolean {
   const permissions = ROLE_PERMISSIONS[role] || [];
-  // console.log('====================================');
-  // console.log("permissions : ", permissions);
-  // console.log('====================================');
-  return permissions.some(p => path === p || path.startsWith(p + '/'));
+  return permissions.some(p => path === p);
 }
 
 export const ROLE_LABELS: Record<AdminRole, string> = {

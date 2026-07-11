@@ -2,9 +2,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import AdminSidebar from '@/components/admin/Sidebar';
+import { AdminRole } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
 export default async function AdminLayout({
   children,
@@ -13,21 +13,56 @@ export default async function AdminLayout({
 }) {
   const session = await getServerSession(authOptions);
 
-  if (!session || !session.user) {
+  if (!session?.user) {
     redirect('/login');
   }
 
+  const user = {
+    name: session.user.name ?? '',
+    email: session.user.email ?? '',
+    role: (session.user.role ?? 'OPERATEUR') as AdminRole,
+  };
+
   return (
     <div className="grid grid-cols-[240px_1fr] min-h-screen">
-      <AdminSidebar user={{
-        name: session.user.name || '',
-        email: session.user.email || '',
-        role: session.user.role || 'OPERATEUR',
-      }} />
+      <AdminSidebar user={user} />
       <div className="bg-bg overflow-hidden">{children}</div>
     </div>
   );
 }
+
+
+
+// import { getServerSession } from 'next-auth';
+// import { authOptions } from '@/lib/auth';
+// import { redirect } from 'next/navigation';
+// import AdminSidebar from '@/components/admin/Sidebar';
+
+// export const dynamic = 'force-dynamic';
+// export const revalidate = 0;
+
+// export default async function AdminLayout({
+//   children,
+// }: {
+//   children: React.ReactNode;
+// }) {
+//   const session = await getServerSession(authOptions);
+
+//   if (!session || !session.user) {
+//     redirect('/login');
+//   }
+
+//   return (
+//     <div className="grid grid-cols-[240px_1fr] min-h-screen">
+//       <AdminSidebar user={{
+//         name: session.user.name || '',
+//         email: session.user.email || '',
+//         role: session.user.role || 'OPERATEUR',
+//       }} />
+//       <div className="bg-bg overflow-hidden">{children}</div>
+//     </div>
+//   );
+// }
 
 
 // export const dynamic = 'force-dynamic';
